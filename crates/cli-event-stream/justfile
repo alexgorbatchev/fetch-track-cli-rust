@@ -1,0 +1,24 @@
+default:
+    @just --list
+
+fmt:
+    cargo fmt --package cli-event-stream
+
+test:
+    mkdir -p .tmp
+    cargo test --package cli-event-stream --all-targets
+
+fmt-check:
+    cargo fmt --package cli-event-stream -- --check
+
+lint:
+    cargo clippy --package cli-event-stream --all-targets -- -D warnings
+
+coverage:
+    mkdir -p .tmp
+    cargo llvm-cov --package cli-event-stream --exclude-from-report fetch-track-cli --exclude-from-report audio-metadata --all-targets --fail-under-lines 90
+
+check: fmt-check lint test coverage
+
+build:
+    cargo build --package cli-event-stream --all-targets

@@ -1,0 +1,31 @@
+[package]
+name = "audio-metadata"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+license = "MIT"
+description = "Audio recognition, metadata providers and atomic native tag editing"
+
+[dependencies]
+audio-chromaprint = { path = "../../../chromaprint" }
+cli-deps = { path = "../../../deps" }
+shazam-client = { path = "../../../shazam" }
+chrono = { version = "0.4", features = ["serde"] }
+futures = "0.3"
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
+libc = "0.2"
+lofty = "0.25"
+reqwest = { version = "0.13", default-features = false, features = ["rustls", "json", "form", "query", "stream"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+tempfile = "3"
+thiserror = "2"
+tokio = { version = "1", features = ["full"] }
+tokio-util = { version = "0.7", features = ["codec"] }
+unicode-normalization = "0.1"
+which = "8"
+
+[dev-dependencies]
+axum = "0.8"
+

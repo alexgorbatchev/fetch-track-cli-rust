@@ -1,0 +1,45 @@
+[package]
+name = "fetch-track-cli"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+license = "MIT"
+description = "Find, download, verify, and tag native audio tracks"
+
+[[bin]]
+name = "fetch-track"
+path = "src/main.rs"
+
+[dependencies]
+cli-event-stream = { path = "crates/cli-event-stream" }
+audio-metadata = { path = "crates/audio-metadata" }
+cli-command-kit = { path = "../cli-command-kit" }
+cli-deps = { path = "../deps" }
+chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4.6", features = ["derive", "env", "string"] }
+dialoguer = "0.12"
+dirs = "6"
+futures = "0.3"
+indicatif = "0.18"
+libc = "0.2"
+reqwest = { version = "0.13", default-features = false, features = ["rustls", "json", "form", "query", "stream"] }
+rustfft = "6.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tempfile = "3"
+thiserror = "2"
+tokio = { version = "1", features = ["full"] }
+tokio-util = { version = "0.7", features = ["codec"] }
+
+[dev-dependencies]
+which = "8"
+shazam-client = { path = "../shazam" }
+axum = "0.8"
+flate2 = "1"
+tar = "0.4"
+
+
+[workspace]
+members = [".","crates/audio-metadata","crates/cli-event-stream"]
+default-members = [".","crates/audio-metadata","crates/cli-event-stream"]
+resolver = "3"

@@ -1,0 +1,24 @@
+default:
+    @just --list
+
+fmt:
+    cargo fmt --package audio-metadata
+
+test:
+    mkdir -p .tmp
+    cargo test --package audio-metadata --all-targets
+
+fmt-check:
+    cargo fmt --package audio-metadata -- --check
+
+lint:
+    cargo clippy --package audio-metadata --all-targets -- -D warnings
+
+coverage:
+    mkdir -p .tmp
+    cargo llvm-cov --package audio-metadata --exclude-from-report fetch-track-cli --exclude-from-report cli-event-stream --all-targets --fail-under-lines 90
+
+check: fmt-check lint test coverage
+
+build:
+    cargo build --package audio-metadata --all-targets
