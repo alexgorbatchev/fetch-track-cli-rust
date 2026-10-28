@@ -13,8 +13,8 @@ path = "src/main.rs"
 [dependencies]
 cli-event-stream = { path = "crates/cli-event-stream" }
 audio-metadata = { path = "crates/audio-metadata" }
-cli-command-kit = { path = "../cli-command-kit" }
-cli-deps = { path = "../deps" }
+cli-command-kit = { git = "https://github.com/alexgorbatchev/cli-command-kit-rust.git", rev = "40210e689762f6606776764bb3696e2685198c2e" }
+cli-deps = { git = "https://github.com/alexgorbatchev/deps-rust.git", rev = "6aef62e44a87f65d31283a77b93925f456362069" }
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4.6", features = ["derive", "env", "string"] }
 dialoguer = "0.12"
@@ -33,7 +33,7 @@ tokio-util = { version = "0.7", features = ["codec"] }
 
 [dev-dependencies]
 which = "8"
-shazam-client = { path = "../shazam" }
+shazam-client = { git = "https://github.com/alexgorbatchev/shazam-rust.git", rev = "045a7341bdc14613848e616feb3d5f7bc38e5bab" }
 axum = "0.8"
 flate2 = "1"
 tar = "0.4"

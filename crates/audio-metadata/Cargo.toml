@@ -7,9 +7,9 @@ license = "MIT"
 description = "Audio recognition, metadata providers and atomic native tag editing"
 
 [dependencies]
-audio-chromaprint = { path = "../../../chromaprint" }
-cli-deps = { path = "../../../deps" }
-shazam-client = { path = "../../../shazam" }
+audio-chromaprint = { git = "https://github.com/alexgorbatchev/chromaprint-rust.git", rev = "3a4dc41e907b031ff6932ad322756a2623470fbf" }
+cli-deps = { git = "https://github.com/alexgorbatchev/deps-rust.git", rev = "6aef62e44a87f65d31283a77b93925f456362069" }
+shazam-client = { git = "https://github.com/alexgorbatchev/shazam-rust.git", rev = "045a7341bdc14613848e616feb3d5f7bc38e5bab" }
 chrono = { version = "0.4", features = ["serde"] }
 futures = "0.3"
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }

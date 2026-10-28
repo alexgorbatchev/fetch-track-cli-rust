@@ -108,6 +108,7 @@ checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 [[package]]
 name = "audio-chromaprint"
 version = "0.1.0"
+source = "git+https://github.com/alexgorbatchev/chromaprint-rust.git?rev=3a4dc41e907b031ff6932ad322756a2623470fbf#3a4dc41e907b031ff6932ad322756a2623470fbf"
 dependencies = [
  "base64",
  "rustfft",
@@ -365,6 +366,7 @@ checksum = "1c133bc6a41be0d194c306b5506d15e6feeea7b1d6604bd3f8310dfb2ca96486"
 [[package]]
 name = "cli-command-kit"
 version = "0.1.0"
+source = "git+https://github.com/alexgorbatchev/cli-command-kit-rust.git?rev=40210e689762f6606776764bb3696e2685198c2e#40210e689762f6606776764bb3696e2685198c2e"
 dependencies = [
  "clap",
  "dirs 7.0.0",
@@ -377,6 +379,7 @@ dependencies = [
 [[package]]
 name = "cli-deps"
 version = "0.1.0"
+source = "git+https://github.com/alexgorbatchev/deps-rust.git?rev=6aef62e44a87f65d31283a77b93925f456362069#6aef62e44a87f65d31283a77b93925f456362069"
 dependencies = [
  "async-trait",
  "dirs 6.0.0",
@@ -2143,6 +2146,7 @@ dependencies = [
 [[package]]
 name = "shazam-client"
 version = "0.1.0"
+source = "git+https://github.com/alexgorbatchev/shazam-rust.git?rev=045a7341bdc14613848e616feb3d5f7bc38e5bab#045a7341bdc14613848e616feb3d5f7bc38e5bab"
 dependencies = [
  "base64",
  "crc32fast",
