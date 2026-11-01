@@ -15,7 +15,7 @@ fn help_skill_version_and_offline_validation_contracts() {
     for agent in ["0", "1", "true", "yes"] {
         let out = binary().env("AGENT", agent).arg("skill").output().unwrap();
         assert!(out.status.success());
-        assert_eq!(out.stdout, cli::SKILL.as_bytes());
+        assert_eq!(out.stdout, INSTALL_TEXT.as_bytes());
         assert!(out.stderr.is_empty());
         let out = binary()
             .env("AGENT", agent)
@@ -88,7 +88,15 @@ async fn skill_write_failure_and_typed_exit_codes() {
         .unwrap()
         .try_get_matches_from(["fetch-track", "skill"])
         .unwrap();
-    assert!(cli_command_kit::write_skill(&matches, &cli::help_options(), &mut Broken).is_err());
+    assert!(
+        cli_command_kit::write_skill(
+            &cli::command(Mode::Agent).unwrap(),
+            &matches,
+            &cli::help_options(),
+            &mut Broken
+        )
+        .is_err()
+    );
     assert_eq!(cli::exit_code(&Error::Cancelled), 130);
     assert_eq!(
         cli::exit_code(&Error::Dependency(cli_deps::Error::Cancelled)),
@@ -210,3 +218,5 @@ async fn dependency_commands_install_update_and_ensure_through_native_local_rele
         .unwrap();
     server.abort();
 }
+
+const INSTALL_TEXT: &str = "Install the fetch-track skill using the Skills CLI:\n\n  npx skills add alexgorbatchev/fetch-track-cli --skill fetch-track\n\nSkill:\n\n  https://github.com/alexgorbatchev/fetch-track-cli/tree/main/skills/fetch-track\n";

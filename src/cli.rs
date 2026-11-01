@@ -17,10 +17,12 @@ use std::{
     sync::Arc,
 };
 
-pub const SKILL: &str = "Install the fetch-track skill using the Skills CLI:\n\n  npx skills add alexgorbatchev/fetch-track-cli --skill fetch-track\n\nSkill:\n\n  https://github.com/alexgorbatchev/fetch-track-cli/tree/main/skills/fetch-track\n";
 pub fn help_options() -> HelpOptions {
     HelpOptions {
-        skill: Some(SKILL.into()),
+        skill: Some(
+            cli_command_kit::SkillSource::new("alexgorbatchev/fetch-track-cli", "main")
+                .expect("the fixed skill source names a GitHub repository"),
+        ),
         ..Default::default()
     }
 }
@@ -235,7 +237,8 @@ pub async fn execute(matches: &ArgMatches, mode: Mode, token: &CancellationToken
             env!("CARGO_PKG_VERSION")
         )?);
     }
-    if cli_command_kit::write_skill(matches, &help_options(), &mut std::io::stdout())? {
+    let root = command(mode)?;
+    if cli_command_kit::write_skill(&root, matches, &help_options(), &mut std::io::stdout())? {
         return Ok(());
     }
     if matches.subcommand_name() == Some("self") {
