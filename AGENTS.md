@@ -15,7 +15,7 @@ Inherit the parent Rust instructions. This Git repository contains a Cargo works
 - Format only this package: `just fmt`.
 - Run behavioral tests: `just test`.
 - Run formatting, strict Clippy, and at least 90% line coverage: `just check`.
-- CI (`.github/workflows/ci.yml`) runs `just check` on Linux with FFmpeg for pull requests and pushes to `main`.
+- CI (`.github/workflows/ci.yml`) runs `just check` on Linux with FFmpeg and yt-dlp for pull requests and pushes to `main`.
 - Keep evidence under `.tmp/`; use real local HTTP servers, FFmpeg-generated audio, and isolated subprocess fixtures.
 - Read CLI, documentation, and skill-writing guidance before changing their corresponding interfaces.
 
