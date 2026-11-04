@@ -177,6 +177,9 @@ async fn dependency_commands_install_update_and_ensure_through_native_local_rele
     let manager = cli_deps::Manager::new(cli_deps::Config {
         dependencies: vec![dep],
         bin_dir: Some(bin.clone()),
+        // Search only the managed directory: a global yt-dlp would satisfy the
+        // dependency before anything is installed.
+        search_path: Some(bin.as_os_str().to_owned()),
         runner: Some(Arc::new(cli_deps::ProcessRunner {
             path: Some(bin.as_os_str().to_owned()),
             ..Default::default()
