@@ -179,6 +179,7 @@ async fn dependency_commands_install_update_and_ensure_through_native_local_rele
         bin_dir: Some(bin.clone()),
         runner: Some(Arc::new(cli_deps::ProcessRunner {
             path: Some(bin.as_os_str().to_owned()),
+            ..Default::default()
         })),
         ..Default::default()
     })

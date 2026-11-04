@@ -155,12 +155,12 @@ pub fn dependency_manager() -> Result<cli_deps::Manager> {
             &bin,
             std::env::var_os("PATH").as_deref(),
         )?),
+        ..Default::default()
     });
     let mut yt = cli_deps::Dependency::new("yt-dlp", "2024.08.01");
     yt.install_url = "https://github.com/yt-dlp/yt-dlp#installation".into();
     yt.installer = Some(Arc::new(cli_deps::YtDlpInstaller {
         client: cli_deps::ReleaseClient::github()?,
-        runner: runner.clone(),
     }));
     let mut ffmpeg = cli_deps::Dependency::new("ffmpeg", "4.4");
     ffmpeg.install_url = "https://ffmpeg.org/download.html".into();
@@ -180,6 +180,8 @@ pub fn dependency_manager() -> Result<cli_deps::Manager> {
         app_name: "fetch-track".into(),
         dependencies: vec![yt, ffmpeg, ffprobe],
         runner: Some(runner),
+        // Selecting the child PATH verifies versions again within the same run.
+        cache: Some(Arc::new(cli_deps::MemoryCache::default())),
         ..Default::default()
     })?)
 }
@@ -338,10 +340,7 @@ async fn execute_pipeline(
     target: Option<Target>,
 ) -> Result<()> {
     let cwd = std::env::current_dir()?;
-    let tools = Tools::new(
-        cli_deps::managed_path(manager.bin_dir(), std::env::var_os("PATH").as_deref())?,
-        cwd,
-    );
+    let tools = Tools::new(manager.child_path(token).await?, cwd);
     let cache_root = dirs::cache_dir()
         .ok_or_else(|| Error::Invalid("cannot resolve cache directory".into()))?
         .join("fetch-track");

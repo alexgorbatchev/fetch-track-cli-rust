@@ -378,3 +378,94 @@ fn cli_validates_progress_environment_before_dependencies_and_handles_sigterm() 
     let output = child.wait_with_output().unwrap();
     assert_eq!(output.status.code(), Some(130));
 }
+
+#[test]
+fn cli_runs_the_satisfying_global_tool_and_the_managed_one_when_global_is_too_old() {
+    use std::os::unix::fs::PermissionsExt;
+    let fixture = Fixture::new();
+    let managed = fixture.root().join("data/fetch-track/bin");
+    std::fs::create_dir_all(&managed).unwrap();
+    let marker = fixture.root().join("used");
+    let tracer = |copy: &str, version: &str| {
+        format!(
+            "#!/bin/sh\nif [ \"$1\" = '--version' ]; then printf '{version}\\n'; exit 0; fi\nprintf '{copy}' > '{}'\nexit 1\n",
+            marker.display()
+        )
+    };
+    let install = |path: std::path::PathBuf, script: String| {
+        std::fs::write(&path, script).unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).unwrap();
+    };
+    let acquire = |out_dir: &str| {
+        fixture
+            .cli()
+            .args([
+                "Artist - Song",
+                "--skip-verify",
+                "--skip-metadata",
+                "--no-cache",
+                "--out-dir",
+                out_dir,
+            ])
+            .output()
+            .unwrap()
+    };
+    install(managed.join("yt-dlp"), tracer("managed", "2026.10.01"));
+    let out = acquire("first");
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(!marker.exists(), "the satisfying global yt-dlp ran");
+    let global = std::fs::read_to_string(fixture.bin.join("yt-dlp")).unwrap();
+    install(managed.join("yt-dlp"), global);
+    install(fixture.bin.join("yt-dlp"), tracer("global", "2020.01.01"));
+    let out = acquire("second");
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(
+        !marker.exists(),
+        "the managed yt-dlp ran instead of the outdated global one"
+    );
+}
+
+#[test]
+fn cli_streams_progress_to_the_unix_socket_named_by_the_shortcut() {
+    let fixture = Fixture::new();
+    // Relative paths keep the socket address within the platform's length limit:
+    // tests run in the package directory and the CLI runs in the fixture root.
+    let relative = fixture
+        .root()
+        .strip_prefix(env!("CARGO_MANIFEST_DIR"))
+        .unwrap()
+        .join("progress.sock");
+    let listener = std::os::unix::net::UnixListener::bind(&relative).unwrap();
+    let reader = std::thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        let mut text = String::new();
+        std::io::Read::read_to_string(&mut stream, &mut text).unwrap();
+        text
+    });
+    let out = fixture
+        .cli()
+        .args(["Artist - Song", "--skip-verify", "--skip-metadata"])
+        .args(["--progress-socket", "progress.sock"])
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let events: Vec<Event> = reader
+        .join()
+        .unwrap()
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+    assert_eq!(events.last().unwrap().kind, "complete");
+}

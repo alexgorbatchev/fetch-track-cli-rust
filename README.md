@@ -28,7 +28,7 @@ The executable currently targets Unix platforms. Runtime tools are yt-dlp 2024.0
 
 # Setup
 
-Check tools with `fetch-track dependencies check`. Install missing tools with `fetch-track dependencies install`, or allow installation during a command with `--auto-install`. yt-dlp is installed into the application's managed binary directory. FFmpeg installation uses the platform package manager and can request system privileges. Human terminal sessions offer a confirmation prompt for missing tools; agent and redirected sessions require explicit installation or `--auto-install`.
+Check tools with `fetch-track dependencies check`. Install missing tools with `fetch-track dependencies install`, or allow installation during a command with `--auto-install`. A yt-dlp, FFmpeg, or ffprobe already on `PATH` is used when it meets the minimum version; the managed copy is used only when that one is missing or too old. yt-dlp is installed as its unpacked upstream build into the application's managed binary directory, so runs do not unpack into the system temporary directory, and updating downloads the build again. FFmpeg installation uses the platform package manager and can request system privileges. Human terminal sessions offer a confirmation prompt for missing tools; agent and redirected sessions require explicit installation or `--auto-install`.
 
 `fetch-track skill` prints an offline canonical skill-installation pointer. The matching local guide is [skills/fetch-track/SKILL.md](skills/fetch-track/SKILL.md); publication of the Rust guide is pending.
 
@@ -84,7 +84,7 @@ Reserve an inherited progress descriptor for this command rather than writing to
 
 Self-update returns an unpublished-release error by default. A deployed Rust channel requires all three environment variables: `FETCH_TRACK_RUST_RELEASE_BASE_URL`, `FETCH_TRACK_RUST_RELEASE_OWNER`, and `FETCH_TRACK_RUST_RELEASE_REPO`. The base must use HTTPS, except HTTP on loopback. The channel must provide the release redirect and platform archives documented in [setup](skills/fetch-track/references/setup.md). It must contain Rust executables, not Go artifacts.
 
-Exit statuses are 0 for success, 1 for runtime failures, 2 for argument validation or a radio-edit verification result, and 130 for cancellation. Acquisition treats optional verification and metadata failures as warnings. Ctrl-C and SIGTERM cancel work and terminate child process groups.
+Exit statuses are 0 for success, 1 for runtime failures, 2 for argument validation or a radio-edit verification result, and 130 for cancellation. Acquisition treats optional verification and metadata failures as warnings. Ctrl-C and SIGTERM cancel work. Cancelled and timed-out tools receive SIGTERM to their whole process group, so they can remove their temporary files, and SIGKILL only if part of the group is still running five seconds later.
 
 # Migration Corrections
 

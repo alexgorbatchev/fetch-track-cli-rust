@@ -1,8 +1,8 @@
 # External tools and release channels
 
-Required tools are yt-dlp >=2024.08.01 and FFmpeg/ffprobe >=4.4. Managed executables precede PATH. The managed directory is the platform data directory plus `fetch-track/bin`; XDG variables apply through platform directory resolution.
+Required tools are yt-dlp >=2024.08.01 and FFmpeg/ffprobe >=4.4. A tool on PATH that meets its minimum version is used; the managed copy is used only when that tool is missing or older. The managed directory is the platform data directory plus `fetch-track/bin`; XDG variables apply through platform directory resolution.
 
-`dependencies install` installs unsatisfied tools; named installation and update operate on their listed tools. yt-dlp downloads its own upstream executable. FFmpeg and ffprobe use the platform FFmpeg package installer and may request system privileges. Human terminal commands can ask to install unsatisfied tools. Agent and redirected commands use explicit `dependencies install` or `--auto-install`.
+`dependencies install` installs unsatisfied tools; named installation and update operate on their listed tools. yt-dlp installs and updates by downloading its unpacked upstream build, which runs without extracting into the system temporary directory. FFmpeg and ffprobe use the platform FFmpeg package installer and may request system privileges. Human terminal commands can ask to install unsatisfied tools. Agent and redirected commands use explicit `dependencies install` or `--auto-install`.
 
 The Rust application is unpublished. `self update` reports an unpublished-release error unless all three variables are explicitly configured:
 
