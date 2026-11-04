@@ -175,7 +175,13 @@ async fn ndjson_is_atomic_across_concurrent_emitters_and_reports_broken_streams(
 async fn ipc_connects_unix_tcp_and_duplicates_borrowed_fd() {
     use std::os::fd::AsRawFd;
     let temp = tempfile::tempdir_in(concat!(env!("CARGO_MANIFEST_DIR"), "/.tmp")).unwrap();
-    let path = temp.path().join("progress.sock");
+    // Tests run in the package directory; a relative socket path stays within the
+    // platform's address length limit however deep the checkout is.
+    let path = temp
+        .path()
+        .strip_prefix(env!("CARGO_MANIFEST_DIR"))
+        .unwrap()
+        .join("progress.sock");
     let listener = tokio::net::UnixListener::bind(&path).unwrap();
     let token = CancellationToken::new();
     let reporter = Reporter::connect(&Target::Unix(path.to_owned()), &token)
