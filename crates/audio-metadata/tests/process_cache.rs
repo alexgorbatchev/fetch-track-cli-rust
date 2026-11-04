@@ -180,3 +180,20 @@ fn cache_expires_corruption_is_miss_disabled_writes_nothing_and_hashes_content()
     std::fs::write(&file, b"replaced").unwrap();
     assert_ne!(first, Cache::file_key(&file).unwrap());
 }
+
+#[tokio::test]
+async fn overlong_progress_lines_fail_as_invalid() {
+    let directory = tempfile::tempdir_in(concat!(env!("CARGO_MANIFEST_DIR"), "/.tmp")).unwrap();
+    let tools = Tools::new(std::env::var_os("PATH").unwrap(), directory.path().into());
+    let error = tools
+        .lines::<_, _, Error>(
+            "sh",
+            &args(&["-c", "head -c 2000000 /dev/zero | tr '\\0' x"]),
+            Duration::from_secs(5),
+            &CancellationToken::new(),
+            |_| async { Ok(()) },
+        )
+        .await
+        .unwrap_err();
+    assert!(error.to_string().contains("invalid progress line"));
+}

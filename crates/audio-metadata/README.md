@@ -22,11 +22,12 @@
 - Inspection merges container tags with first-audio-stream tags, preserving container precedence. Ordinary video streams are not cover art. Native front covers in Opus and other audio formats are recognized.
 - Tag editing supports MP3, M4A, Opus, FLAC and Ogg. An absent `TagUpdate` field retains its existing value; a present empty string clears that field. Front covers are replaced while other pictures remain intact. Images are limited to 16000px per dimension and 256 MiB of decoding allocation.
 - A destination is replaced only when it is the source itself; unrelated collisions fail. Edits stage a copy beside the destination and commit atomically. Failures preserve the source; successful writes leave source removal to the caller. Synchronous tag and image work blocks its calling thread.
+- Each subprocess runs in its own process group. Timeouts, cancellation, output-limit failures and dropped `run`/`lines` futures send SIGTERM to the group, keep its output pipes open and drained, and send SIGKILL only to members still running after `Tools::termination_grace` (five seconds by default). Returned calls wait until the group is gone. A dropped call finishes termination in a Tokio blocking task, which runtime shutdown waits for. Terminal signals do not reach the group, so applications cancel their token on SIGINT and SIGTERM.
 - Native file paths remain intact through subprocess arguments. Display names may replace invalid UTF-8 characters. The library reads no environment variables automatically and performs no work at import time.
 
 # Prerequisites
 
-- Rust 1.88 or newer on Unix, with a Tokio runtime for asynchronous operations.
+- Rust 1.89 or newer on Unix, with a Tokio runtime for asynchronous operations.
 - [FFmpeg and FFprobe](https://ffmpeg.org/download.html) available through the supplied executable search path.
 - Network access to the selected metadata providers for recognition and artwork downloads.
 
@@ -67,7 +68,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 | `tag::write(source, target, &TagUpdate, token)` | Applies a partial update and returns the committed destination. |
 | `tag::apply(source, &Metadata, out_dir, artwork, token)` | Creates a metadata-derived filename and provenance comment. |
 | `tag::clean_output(source, out_dir)` | Copies bytes into a cleaned filename without modifying tags. |
-| `process::Tools::{run,lines}` | Executes bounded, cancellable processes with native arguments. |
+| `process::Tools::{run,lines}` | Executes bounded, cancellable processes with native arguments, ending each with its process group. |
 | `cache::Cache` | Provides atomic JSON and bounded binary entries with explicit lifetimes. |
 | `identity::normalize` | Normalizes Unicode identity strings for matching. |
 | `Error` | Distinguishes cancellation, invalid inputs, process, metadata, I/O, JSON and HTTP failures. |

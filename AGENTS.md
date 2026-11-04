@@ -1,6 +1,6 @@
 ---
 created_on: 2026-10-14 08:25
-last_modified: 2026-11-04 13:07
+last_modified: 2026-11-04 13:31
 status: current
 ---
 
@@ -25,7 +25,7 @@ Inherit the parent Rust instructions. This Git repository contains a Cargo works
 - `src/pipeline.rs` and `src/pipeline/`: candidate workflow, yt-dlp processes, probing, download and verification.
 - The internal `crates/audio-metadata` package supplies provider resolution, native inspection, content-aware caching, image processing and atomic tag edits. Use its APIs directly rather than introducing re-export facades.
 - `src/quality.rs`: RustFFT spectrum, calibrated signal measurements and structural heuristics.
-- `audio_metadata::process::Tools` supplies bounded process output, deadlines and process-group cancellation with native `OsStr` arguments.
+- `audio_metadata::process::Tools` supplies bounded process output, deadlines and process-group termination with native `OsStr` arguments. The CLI builds it from `Manager::child_path`, so tools resolve to the copies dependency checks selected.
 - `src/progress.rs` owns exact domain event schemas; the internal `crates/cli-event-stream` package owns native descriptor and socket transport.
 - `src/update.rs`: explicit unpublished-by-default Rust release channel and atomic executable replacement.
 
@@ -41,7 +41,7 @@ Inherit the parent Rust instructions. This Git repository contains a Cargo works
 - Keep cache keys content-aware for recognition, check cancellation before cache hits, and avoid storing credentials.
 - Verify spectral changes using synthetic signals at their actual sample rate; do not infer bandwidth from aliased subsamples.
 - Treat mix structure as heuristics. Silence and insufficient samples cannot establish bandwidth.
-- Signal cancellation must kill the entire child process group, including extractor descendants.
+- Signal cancellation, timeouts, output-limit failures and dropped runs must end the entire child process group, including extractor descendants: SIGTERM first, SIGKILL only after the bounded grace period, with output pipes kept open and drained until the group is gone. A one-file PyInstaller tool killed outright leaks its temporary unpack directory. Test termination with real subprocesses that trap signals.
 - Keep Rust artifacts unpublished until an authorized release exists. Never install Go release archives as Rust binaries or add an invented default release URL.
 - Self-update tests may replace only a copied fixture executable. Never run the original Go self-update tests against the development executable.
 - Dependency installation tests must use configured local release fixtures; never invoke system package managers from tests.
