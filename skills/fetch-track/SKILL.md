@@ -7,7 +7,7 @@ description: >-
 author: Alex Gorbatchev
 metadata:
   created_on: 2026-10-14 08:25
-  last_modified: 2026-10-14 08:35
+  last_modified: 2026-11-05 21:48
   status: current
 ---
 
@@ -34,4 +34,4 @@ Verification measures spectrum and signal levels from up to 30 seconds. Structur
 
 Acquisition normally prints `output: <path>` and `status: <status>` in agent mode. A stdout progress target produces only NDJSON on acquisition stdout. Verification prints one JSON report in agent mode. Warnings, verbose diagnostics and runtime errors use stderr. Home paths are displayed with `~/`; expand them before opening files from another program.
 
-Exit 0 means success, 1 a runtime failure, 2 argument validation or a likely radio edit from `track verify`, and 130 cancellation. Optional verification or metadata failures during acquisition are warnings; the complete event still contains the retained output path. Ctrl-C and SIGTERM cancel work. Cancelled and timed-out tools receive SIGTERM to their process group and SIGKILL only if still running five seconds later.
+Exit 0 means success, 1 a runtime failure, 2 argument validation or a likely radio edit from `track verify`, and 130 cancellation. Optional verification or metadata failures during acquisition are warnings; the complete event still contains the retained output path. Ctrl-C and SIGTERM cancel work. Cancelled and timed-out tools receive SIGTERM to their process group and SIGKILL only if still running five seconds later. Allow cleanup to continue until the tool and its process group have exited; operating-system delays after SIGKILL can extend shutdown beyond the grace period.

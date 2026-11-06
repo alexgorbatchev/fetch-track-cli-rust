@@ -22,6 +22,9 @@ pub const DEFAULT_TERMINATION_GRACE: Duration = cli_deps::DEFAULT_TERMINATION_GR
 /// successful exit when descendants remain. Programs such as PyInstaller
 /// one-file builds remove their temporary files only when they can handle
 /// SIGTERM.
+/// Cleanup keeps ownership and drains output until the leader is reaped and
+/// the group is empty, even when the operating system delays exit after SIGKILL.
+/// The grace period bounds escalation, not the time needed to confirm exit.
 ///
 /// Children do not share the caller's foreground process group, so terminal
 /// signals such as Ctrl-C do not reach them; translate SIGINT and SIGTERM into
@@ -82,7 +85,7 @@ impl Tools {
                 )))
             }),
         };
-        group.terminate().await;
+        group.terminate().await?;
         result
     }
     pub async fn lines<F, Fut, E>(
@@ -146,7 +149,7 @@ impl Tools {
                 Err(E::from(Error::Process(format!("{name}: timed out"))))
             }),
         };
-        group.terminate().await;
+        group.terminate().await?;
         result
     }
     fn spawn(&self, name: &str, args: &[impl AsRef<OsStr>]) -> Result<ProcessGroup> {
@@ -213,12 +216,15 @@ impl ProcessGroup {
     }
     /// Sends SIGTERM to a group with live members and waits until every member
     /// exits, sending SIGKILL to members alive after the grace period.
-    async fn terminate(&mut self) {
+    async fn terminate(&mut self) -> std::io::Result<()> {
         if let Some(reaper) = self.start_termination() {
             // Should this wait be dropped, the blocking task still finishes, and
             // the runtime waits for it when it shuts down.
-            let _ = tokio::task::spawn_blocking(move || reaper.run()).await;
+            tokio::task::spawn_blocking(move || reaper.run())
+                .await
+                .map_err(std::io::Error::other)?;
         }
+        Ok(())
     }
     /// Sends SIGTERM to the group and returns the reaper that finishes ending it,
     /// or `None` when every member has already exited.
@@ -254,7 +260,7 @@ impl Drop for ProcessGroup {
             return;
         };
         // A task the shutting-down runtime discards drops its reaper, which then
-        // sends SIGKILL at once.
+        // sends SIGKILL at once and waits synchronously for group exit.
         if let Ok(runtime) = tokio::runtime::Handle::try_current() {
             runtime.spawn_blocking(move || reaper.run());
         } else {
@@ -266,7 +272,8 @@ impl Drop for ProcessGroup {
 }
 /// Finishes terminating a process group that has received SIGTERM.
 ///
-/// Dropping a reaper that has not finished sends SIGKILL to the group at once.
+/// Dropping an unfinished reaper sends SIGKILL at once and retains ownership
+/// until group exit, including when runtime shutdown discards a queued task.
 struct Reaper {
     child: Child,
     /// Nonblocking read ends of the output pipes, drained while waiting.
@@ -282,15 +289,19 @@ impl Reaper {
     /// A process group ID is not reused while the group has a member, and polling
     /// stops as soon as the group is empty, so the signals reach only this group.
     fn run(mut self) {
-        const KILL_WAIT: Duration = Duration::from_secs(1);
         if !self.wait(self.grace) {
-            signal_group(self.group, libc::SIGKILL);
-            // Kill the leader directly too, in case it left its group. A process
-            // that still survives (for example, in uninterruptible sleep) is left
-            // behind, and Tokio's orphan reaper collects the leader.
-            let _ = self.child.start_kill();
-            self.wait(KILL_WAIT);
+            self.kill_and_wait();
         }
+        self.finished = true;
+    }
+    fn kill_and_wait(&mut self) {
+        const REAP_INTERVAL: Duration = Duration::from_secs(1);
+        signal_group(self.group, libc::SIGKILL);
+        // The leader may have left its group. SIGKILL does not establish exit:
+        // a member can remain in uninterruptible sleep or await reaping. Keep
+        // ownership and drain output until termination is actually confirmed.
+        let _ = self.child.start_kill();
+        while !self.wait(REAP_INTERVAL) {}
         self.finished = true;
     }
     /// Drains the pipes until the group is gone or `limit` passes; reports
@@ -333,8 +344,7 @@ impl Reaper {
 impl Drop for Reaper {
     fn drop(&mut self) {
         if !self.finished {
-            signal_group(self.group, libc::SIGKILL);
-            let _ = self.child.start_kill();
+            self.kill_and_wait();
         }
     }
 }
@@ -351,9 +361,12 @@ fn nonblocking(pipe: std::os::fd::OwnedFd) -> Option<std::fs::File> {
 }
 /// Reports whether the leader has exited (reaping it) and no group member remains.
 fn exited(child: &mut Child, group: Option<libc::pid_t>) -> bool {
-    !matches!(child.try_wait(), Ok(None))
-        // SAFETY: kill(2) with signal 0 only checks for processes in the group.
-        && group.is_none_or(|group| unsafe { libc::kill(-group, 0) } != 0)
+    matches!(child.try_wait(), Ok(Some(_)))
+        && group.is_none_or(|group| {
+            // SAFETY: kill(2) with signal 0 only checks for processes in the group.
+            (unsafe { libc::kill(-group, 0) }) == -1
+                && std::io::Error::last_os_error().raw_os_error() == Some(libc::ESRCH)
+        })
 }
 fn signal_group(group: Option<libc::pid_t>, signal: libc::c_int) {
     if let Some(group) = group {

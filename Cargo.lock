@@ -377,7 +377,7 @@ dependencies = [
 [[package]]
 name = "cli-deps"
 version = "0.1.0"
-source = "git+https://github.com/alexgorbatchev/deps-rust.git?rev=b814d706b03944b98189280fd8c306daf219a382#b814d706b03944b98189280fd8c306daf219a382"
+source = "git+https://github.com/alexgorbatchev/deps-rust.git?rev=06917eb064c4c02fba0d129494fc60567ffb4242#06917eb064c4c02fba0d129494fc60567ffb4242"
 dependencies = [
  "async-trait",
  "dirs 6.0.0",
@@ -396,6 +396,7 @@ dependencies = [
  "url",
  "versions",
  "which",
+ "windows-sys 0.61.2",
  "zip",
 ]
 
@@ -2264,7 +2265,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.4.3",
+ "getrandom 0.3.4",
  "once_cell",
  "rustix",
  "windows-sys 0.61.2",
