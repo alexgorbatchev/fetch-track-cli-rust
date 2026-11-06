@@ -17,6 +17,10 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      YTDLP_VERSION: 2026.10.26
+      YTDLP_SHA256: f34053415136e55073dd64ba5326d161ecc23ce0e98c081d8752867b37809450
     steps:
       - uses: actions/checkout@v7
 
@@ -32,10 +36,44 @@ jobs:
         with:
           tool: cargo-llvm-cov
 
-      - name: Install audio test dependencies
+      - name: Restore prebuilt FFmpeg and ffprobe
+        uses: AnimMouse/setup-ffmpeg@178e0b4a408f06ce40d896c3cd79f50fa6f8b0c3 # v1
+        with:
+          version: '8.1'
+
+      - name: Restore unpacked yt-dlp
+        id: yt-dlp
+        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: ${{ runner.tool_cache }}/yt-dlp/${{ env.YTDLP_VERSION }}
+          key: yt-dlp-${{ runner.os }}-${{ runner.arch }}-${{ env.YTDLP_VERSION }}-${{ env.YTDLP_SHA256 }}
+
+      - name: Install unpacked yt-dlp
+        if: steps.yt-dlp.outputs.cache-hit != 'true'
         run: |
-          sudo apt-get update && sudo apt-get install -y ffmpeg
-          pipx install yt-dlp
+          archive_dir=$(mktemp -d "$RUNNER_TEMP/yt-dlp.XXXXXX")
+          trap 'rm -r -- "$archive_dir"' EXIT
+          curl --fail --location --retry 3 --output "$archive_dir/yt-dlp_linux.zip" \
+            "https://github.com/yt-dlp/yt-dlp/releases/download/$YTDLP_VERSION/yt-dlp_linux.zip"
+          printf '%s  %s\n' "$YTDLP_SHA256" "$archive_dir/yt-dlp_linux.zip" | sha256sum --check --strict
+          mkdir -p "$RUNNER_TOOL_CACHE/yt-dlp/$YTDLP_VERSION"
+          unzip -q "$archive_dir/yt-dlp_linux.zip" -d "$RUNNER_TOOL_CACHE/yt-dlp/$YTDLP_VERSION"
+          mv "$RUNNER_TOOL_CACHE/yt-dlp/$YTDLP_VERSION/yt-dlp_linux" "$RUNNER_TOOL_CACHE/yt-dlp/$YTDLP_VERSION/yt-dlp"
+
+      - name: Verify audio tools
+        run: |
+          yt_dlp_dir="$RUNNER_TOOL_CACHE/yt-dlp/$YTDLP_VERSION"
+          test "$("$yt_dlp_dir/yt-dlp" --version)" = "$YTDLP_VERSION"
+          echo "$yt_dlp_dir" >> "$GITHUB_PATH"
+          ffmpeg -version
+          ffprobe -version
+
+      - name: Save prepared yt-dlp
+        if: steps.yt-dlp.outputs.cache-hit != 'true'
+        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: ${{ runner.tool_cache }}/yt-dlp/${{ env.YTDLP_VERSION }}
+          key: ${{ steps.yt-dlp.outputs.cache-primary-key }}
 
       - name: Check
         run: just check
